@@ -4,6 +4,8 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.app.Notification
 import android.app.PendingIntent
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Path
 import android.os.Build
@@ -106,7 +108,19 @@ class WechatService : AccessibilityService() {
         }
         if (className == "com.tencent.mm.plugin.sns.ui.SnsUploadUI") {
 
-            click("发表")
+
+//            handler.postDelayed({
+//                copyText("com.tencent.mm:id/hxn",
+//                    "测试自动发朋友圈\r\n\r\n" +
+//                            "浮世三千，吾爱有三。\r\n" +
+//                            "日、月与卿。\r\n" +
+//                            "日为朝，\r\n" +
+//                            "月为暮，\r\n"+
+//                            "卿为朝朝暮暮。\r\n")
+//                handler.postDelayed({
+//                    clickById("com.tencent.mm:id/d6")
+//                }, 1000)
+//            }, 1000)
             isOneTime = true
             resetConfig()
         }
@@ -154,18 +168,18 @@ class WechatService : AccessibilityService() {
             return
         }
         if (rootInfo.childCount >0) {
-            log("存在子节点:$rootInfo")
+            log("DFS 存在子节点:$rootInfo")
 
             for (i in 0 until rootInfo.childCount) {
                 DFS(rootInfo.getChild(i))
             }
         } else {
-            log("不存在子节点")
+            log("DFS 不存在子节点")
             val text = rootInfo.text;
             val name =rootInfo.className.toString();
-            val r_name =rootInfo.viewIdResourceName;
-            log("不存在子节点：$rootInfo")
-            log("节点文本=$text[$name][$r_name]")
+            val viewIdResourceName =rootInfo.viewIdResourceName;
+            log("DFS 不存在子节点：$rootInfo")
+            log("DFS  节点文本=$text[$name][$viewIdResourceName]")
         }
     }
     /**
@@ -241,7 +255,27 @@ class WechatService : AccessibilityService() {
             nodeInfo.recycle()
         }, 1000)
     }
+    private  fun copyText(id:String,text :String){
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("text", text);
+        clipboard.primaryClip = clip;
 
+        val nodeInfo = rootInActiveWindow
+        val list = nodeInfo.findAccessibilityNodeInfosByViewId(id)
+        log(list.toString())
+        if (list != null && list.size > 0) {
+            //焦点（n是AccessibilityNodeInfo对象）
+            val node = list[list.size - 1];
+            node.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
+            //        粘贴进入内容
+            node.performAction(AccessibilityNodeInfo.ACTION_PASTE);
+
+        } else {
+            Toast.makeText(this, "clickById 找不到有效的节点", Toast.LENGTH_SHORT).show()
+        }
+        nodeInfo.recycle()
+
+    }
     private fun log(config: String?) {
         Log.d("AccessibilityNodeInfo", config)
     }
